@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package neighbour_antibodies.v1;
+
+enum SeqType {
+    SEQ_TYPE_UNSPECIFIED = 0;
+    // Amino acid sequence
+    SEQ_TYPE_AA = 1;
+    // Nucleotide sequence
+    SEQ_TYPE_NT = 2;
+}
+
+message Ab {
+    // An identifier for the antibody
+    string id = 1; 
+    // The sequence (nt or aa) for a heavy chain
+    string heavy_seq = 2; 
+    // The sequence (nt or aa) for a light chain
+    string light_seq = 3; 
+    // True if and only if both heavy_seq and light_seq are populated
+    bool paired = 4; 
+    // Are the sequences amino acid or nucleotide
+    SeqType seq_type = 5; 
+}
+
+enum DistanceMetric {
+    // SPL's choice
+    DISTANCE_METRIC_UNSPECIFIED = 0; 
+    // Edit distance (sequences must be aligned)
+    DISTANCE_METRIC_HAMMING = 1; 
+    // Physical-chemical distance (sequences must be aligned)
+    DISTANCE_METRIC_GRANTHAM = 2; 
+    // Edit distance
+    DISTANCE_METRIC_LEVENSHTEIN = 3; 
+}
+
+message NeighbourCutoff {
+    oneof cutoff {
+        // k-nearest-neighbours
+        int64 k = 1; 
+        // All neighbours with distance <= `threshold`
+        float threshold = 2; 
+    }
+} 
+
+message GetNeighbourAbsRequest {
+    // The antibody you want to find neighbour antibodies of
+    Ab query = 1; 
+    // The collection of antibodies to perform to search in
+    repeated Ab universe = 2; 
+    // The type of distance metric to use
+    DistanceMetric metric = 3; 
+    // A way to limit the antibodies returned
+    NeighbourCutoff cutoff = 4; 
+}
+
+message GetNeighbourAbsResponse {
+    // The antibody you found neighbour antibodies of
+    Ab query = 1; 
+    // A mapping from an Ab.id to a distance
+    map<string, float> distance = 2; 
+}
+
+service NeighbourAbService {
+    rpc GetNeighbourAbs(GetNeighbourAbsRequest) returns (GetNeighbourAbsResponse);
+}
